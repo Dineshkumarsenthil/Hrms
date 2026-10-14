@@ -1,0 +1,1464 @@
+{
+  "info": {
+    "name": "HRMS API",
+    "description": "Run 'Login - Admin/HR/Employee' first: it stores access_token for all other requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "refresh_token",
+      "value": ""
+    },
+    {
+      "key": "employee_id",
+      "value": "3"
+    },
+    {
+      "key": "leave_id",
+      "value": "1"
+    },
+    {
+      "key": "payroll_id",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Login - Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('login ok', () => pm.response.code === 200);",
+                  "pm.collectionVariables.set('access_token', j.access);",
+                  "pm.collectionVariables.set('refresh_token', j.refresh);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login - HR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"hr\",\n  \"password\": \"Hr@12345\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('login ok', () => pm.response.code === 200);",
+                  "pm.collectionVariables.set('access_token', j.access);",
+                  "pm.collectionVariables.set('refresh_token', j.refresh);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login - Employee (dinesh)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"dinesh\",\n  \"password\": \"Employee@123\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('login ok', () => pm.response.code === 200);",
+                  "pm.collectionVariables.set('access_token', j.access);",
+                  "pm.collectionVariables.set('refresh_token', j.refresh);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/refresh/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "if (j.access) pm.collectionVariables.set('access_token', j.access);",
+                  "if (j.refresh) pm.collectionVariables.set('refresh_token', j.refresh);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/me/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Change password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/change-password/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "change-password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"old_password\": \"Employee@123\",\n  \"new_password\": \"NewPass@12345\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout (blacklists refresh token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/logout/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Role matrix",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/roles/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "roles"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/users/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Change user role (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/users/4/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "users",
+                "4"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"HR\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Employees",
+      "item": [
+        {
+          "name": "List employees",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/employees/?search=&department=&is_active=true&page=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "department",
+                  "value": ""
+                },
+                {
+                  "key": "is_active",
+                  "value": "true"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create employee (HR/Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employees/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Asha\",\n  \"last_name\": \"Nair\",\n  \"email\": \"asha.nair@hrms.local\",\n  \"department\": 1,\n  \"designation\": \"Developer\",\n  \"joining_date\": \"2026-01-05\",\n  \"basic_salary\": \"40000\",\n  \"hra\": \"16000\",\n  \"allowances\": \"8000\",\n  \"pf_percent\": \"12\",\n  \"tax_deduction\": \"500\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "if (j.id) pm.collectionVariables.set('employee_id', j.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update employee",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employees/{{employee_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"designation\": \"Senior Developer\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Deactivate employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employees/{{employee_id}}/deactivate/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}",
+                "deactivate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        },
+        {
+          "name": "Activate employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employees/{{employee_id}}/activate/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}",
+                "activate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        },
+        {
+          "name": "My profile (employee)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/employees/me/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List departments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/employees/departments/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "departments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create department",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employees/departments/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "departments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Marketing\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Upload document",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/employees/{{employee_id}}/documents/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}",
+                "documents"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "ID proof",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List documents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/employees/{{employee_id}}/documents/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "{{employee_id}}",
+                "documents"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Download document",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/employees/documents/1/download/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "documents",
+                "1",
+                "download"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete document",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/employees/documents/1/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employees",
+                "documents",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Attendance",
+      "item": [
+        {
+          "name": "Today's record",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/attendance/today/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "today"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Check-in",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance/check-in/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "check-in"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        },
+        {
+          "name": "Check-out",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance/check-out/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "check-out"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        },
+        {
+          "name": "My monthly summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/attendance/my-summary/?year=2026&month=9",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "my-summary"
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2026"
+                },
+                {
+                  "key": "month",
+                  "value": "9"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "My history / all (HR) with filters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/attendance/?date__gte=2026-09-01&date__lte=2026-09-30&ordering=-date",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance"
+              ],
+              "query": [
+                {
+                  "key": "date__gte",
+                  "value": "2026-09-01"
+                },
+                {
+                  "key": "date__lte",
+                  "value": "2026-09-30"
+                },
+                {
+                  "key": "ordering",
+                  "value": "-date"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Monthly summary - all (HR)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/attendance/summary/?year=2026&month=9",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2026"
+                },
+                {
+                  "key": "month",
+                  "value": "9"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin override",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance/override/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "override"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee\": 3,\n  \"date\": \"2026-09-10\",\n  \"status\": \"PRESENT\",\n  \"note\": \"Forgot to punch out\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Leave",
+      "item": [
+        {
+          "name": "Leave types",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/leaves/types/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leaves",
+                "types"
+              ]
+            }
+          }
+        },
+        {
+          "name": "My balances",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/leaves/balances/?year=2026",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leaves",
+                "balances"
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2026"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Apply for leave",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/leaves/requests/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leaves",
+                "requests"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leave_type\": 1,\n  \"start_date\": \"2026-11-02\",\n  \"end_date\": \"2026-11-04\",\n  \"reason\": \"Family function\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "if (j.id) pm.collectionVariables.set('leave_id', j.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List requests (own / all for HR)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/leaves/requests/?status=PENDING",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leaves",
+                "requests"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve (HR/Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/leaves/requests/{{leave_id}}/approve/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leaves",
+                "requests",
+                "{{leave_id}}",
+                "approve"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remarks\": \"Approved\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Reject (HR/Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/leaves/requests/{{leave_id}}/reject/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leaves",
+                "requests",
+                "{{leave_id}}",
+                "reject"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remarks\": \"Team deadline\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Cancel (own)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/leaves/requests/{{leave_id}}/cancel/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "leaves",
+                "requests",
+                "{{leave_id}}",
+                "cancel"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Payroll",
+      "item": [
+        {
+          "name": "Generate payroll (HR/Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payroll/generate/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payroll",
+                "generate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"year\": 2026,\n  \"month\": 9\n}"
+            }
+          }
+        },
+        {
+          "name": "List payroll (own / all for HR)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/payroll/?year=2026&month=9",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payroll"
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2026"
+                },
+                {
+                  "key": "month",
+                  "value": "9"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Payroll detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/payroll/{{payroll_id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payroll",
+                "{{payroll_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Download salary slip PDF",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/payroll/{{payroll_id}}/slip/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payroll",
+                "{{payroll_id}}",
+                "slip"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Credit salary - simulated",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payroll/{{payroll_id}}/credit/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payroll",
+                "{{payroll_id}}",
+                "credit"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        },
+        {
+          "name": "Credit all - simulated",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payroll/credit-all/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payroll",
+                "credit-all"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"year\": 2026,\n  \"month\": 9\n}"
+            }
+          }
+        },
+        {
+          "name": "Unlock (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payroll/{{payroll_id}}/unlock/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payroll",
+                "{{payroll_id}}",
+                "unlock"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Bonus to add\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Manual adjustment (Admin, unlocked only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payroll/{{payroll_id}}/adjust/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payroll",
+                "{{payroll_id}}",
+                "adjust"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": \"500\",\n  \"note\": \"Spot bonus\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Lock (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payroll/{{payroll_id}}/lock/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payroll",
+                "{{payroll_id}}",
+                "lock"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Reports & Dashboards",
+      "item": [
+        {
+          "name": "Attendance report (json|csv|pdf)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/attendance/?date_from=2026-09-01&date_to=2026-09-30&department=1&format=json",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "attendance"
+              ],
+              "query": [
+                {
+                  "key": "date_from",
+                  "value": "2026-09-01"
+                },
+                {
+                  "key": "date_to",
+                  "value": "2026-09-30"
+                },
+                {
+                  "key": "department",
+                  "value": "1"
+                },
+                {
+                  "key": "format",
+                  "value": "json"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Leave report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/leaves/?date_from=2026-01-01&date_to=2026-12-31&format=csv",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "leaves"
+              ],
+              "query": [
+                {
+                  "key": "date_from",
+                  "value": "2026-01-01"
+                },
+                {
+                  "key": "date_to",
+                  "value": "2026-12-31"
+                },
+                {
+                  "key": "format",
+                  "value": "csv"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Payroll summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/payroll/?date_from=2026-09-01&date_to=2026-09-30&format=pdf",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "payroll"
+              ],
+              "query": [
+                {
+                  "key": "date_from",
+                  "value": "2026-09-01"
+                },
+                {
+                  "key": "date_to",
+                  "value": "2026-09-30"
+                },
+                {
+                  "key": "format",
+                  "value": "pdf"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/dashboard/admin/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "dashboard",
+                "admin"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Employee dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/dashboard/employee/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reports",
+                "dashboard",
+                "employee"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Notifications & Audit",
+      "item": [
+        {
+          "name": "Email logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notifications/logs/?status=SENT",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notifications",
+                "logs"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "SENT"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Email templates (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notifications/templates/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notifications",
+                "templates"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Audit logs (read-only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/audit/?entity=Payroll&created_at__date__gte=2026-01-01",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "audit"
+              ],
+              "query": [
+                {
+                  "key": "entity",
+                  "value": "Payroll"
+                },
+                {
+                  "key": "created_at__date__gte",
+                  "value": "2026-01-01"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

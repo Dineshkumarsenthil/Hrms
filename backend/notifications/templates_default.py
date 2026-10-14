@@ -1,0 +1,16 @@
+DEFAULT_TEMPLATES = {
+    "EMPLOYEE_ONBOARDED": ("Welcome to {{ company }}",
+        "Hi {{ name }},\n\nYour HRMS account has been created.\nUsername: {{ username }}\nTemporary password: {{ password }}\n\nPlease log in and change your password.\n\nRegards,\nHR Team"),
+    "LEAVE_APPLIED": ("Leave request submitted ({{ leave_type }})",
+        "Hi {{ name }},\n\nYour {{ leave_type }} request from {{ start }} to {{ end }} ({{ days }} day(s)) has been submitted and is pending approval.\n\nRegards,\nHR Team"),
+    "LEAVE_APPLIED_HR": ("New leave request from {{ name }}",
+        "{{ name }} applied for {{ leave_type }} from {{ start }} to {{ end }} ({{ days }} day(s)). Please review it in the HRMS."),
+    "LEAVE_APPROVED": ("Your leave request was approved",
+        "Hi {{ name }},\n\nYour {{ leave_type }} request ({{ start }} to {{ end }}) has been APPROVED.{% if lop_days %}\nNote: {{ lop_days }} day(s) will be treated as Loss of Pay.{% endif %}\n\nRegards,\nHR Team"),
+    "LEAVE_REJECTED": ("Your leave request was rejected",
+        "Hi {{ name }},\n\nYour {{ leave_type }} request ({{ start }} to {{ end }}) has been REJECTED.\nRemarks: {{ remarks }}\n\nRegards,\nHR Team"),
+    "PAYROLL_PROCESSED": ("Payroll processed for {{ period }}",
+        "Hi {{ name }},\n\nYour payroll for {{ period }} has been processed.\nNet salary: {{ net }}\n\nRegards,\nPayroll Team"),
+    "SALARY_SLIP_READY": ("Salary slip for {{ period }}",
+        "Hi {{ name }},\n\nYour salary slip for {{ period }} is ready. Log in to the HRMS to download it.\n\nRegards,\nPayroll Team"),
+}

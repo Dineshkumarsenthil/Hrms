@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/* ---------- Light theme (default) ---------- */
+@theme {
+  --font-sans: "Poppins", system-ui, sans-serif;
+
+  /* Brand colour: change these 3 lines to change the colour of the whole app */
+  --color-brand: #4f46e5;
+  --color-brand-dark: #4338ca;
+  --color-brand-soft: #eef2ff;
+
+  --color-page: #f4f6fb;   /* page background */
+  --color-card: #ffffff;   /* cards, inputs, popups */
+}
+
+/* ---------- Dark theme ----------
+   The <html> tag gets the class "dark" when dark mode is on.
+   We keep the same class names in the code and only swap the colour values here. */
+.dark {
+  color-scheme: dark; /* dark date pickers, scrollbars and dropdowns */
+
+  --color-brand: #6366f1;
+  --color-brand-dark: #4f46e5;
+  --color-brand-soft: rgba(99, 102, 241, 0.18);
+
+  --color-page: #0f1320;
+  --color-card: #1a1f33;
+
+  /* greys: borders, hover rows, muted and normal text */
+  --color-slate-50: #222842;
+  --color-slate-100: #2a3150;
+  --color-slate-200: #343c5c;
+  --color-slate-400: #8c95b3;
+  --color-slate-500: #a1a9c4;
+  --color-slate-600: #bcc3d8;
+  --color-slate-700: #d3d8e8;
+  --color-slate-800: #eef0f8;
+
+  /* soft boxes on the dashboard */
+  --color-indigo-50: rgba(99, 102, 241, 0.15);
+  --color-teal-50: rgba(20, 184, 166, 0.15);
+  --color-amber-50: rgba(245, 158, 11, 0.15);
+  --color-rose-50: rgba(244, 63, 94, 0.15);
+
+  /* status badges */
+  --color-emerald-100: rgba(16, 185, 129, 0.2);
+  --color-emerald-700: #6ee7b7;
+  --color-amber-100: rgba(245, 158, 11, 0.2);
+  --color-amber-700: #fcd34d;
+  --color-rose-100: rgba(244, 63, 94, 0.2);
+  --color-rose-700: #fda4af;
+  --color-sky-100: rgba(14, 165, 233, 0.2);
+  --color-sky-700: #7dd3fc;
+  --color-purple-100: rgba(168, 85, 247, 0.2);
+  --color-purple-700: #d8b4fe;
+  --color-indigo-100: rgba(99, 102, 241, 0.25);
+  --color-indigo-700: #a5b4fc;
+}
