@@ -6,6 +6,14 @@ import { CheckInCard } from "./Dashboard";
 
 const now = new Date();
 
+// columns that come from the shift calculation
+const shiftCols = [
+  { key: "shift_name", label: "Shift" },
+  { label: "Late", render: (r) => (r.late_minutes ? <span className="text-amber-600">{r.late_minutes} min</span> : "-") },
+  { label: "Early exit", render: (r) => (r.early_exit_minutes ? <span className="text-rose-600">{r.early_exit_minutes} min</span> : "-") },
+  { label: "Overtime", render: (r) => (Number(r.overtime_hours) ? `${r.overtime_hours} h` : "-") },
+];
+
 function MyAttendance() {
   const [m, setM] = useState({ year: now.getFullYear(), month: now.getMonth() + 1 });
   const { data: sum, reload: reloadSum } = useFetch("/attendance/my-summary/", m);
@@ -25,8 +33,15 @@ function MyAttendance() {
           <Stat label="Leave (paid / LOP)" value={`${sum.paid_leave_days} / ${sum.lop_leave_days}`} tone="slate" /><Stat label="Absent / LOP" value={sum.absent_days} tone="red" sub={`${sum.total_hours} hrs worked`} />
         </div>
       )}
+      {sum && (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <Stat label="Holidays (weekdays)" value={sum.holidays} tone="slate" sub="not counted as working days" />
+          <Stat label="Late check-ins" value={sum.late_days} tone="amber" />
+          <Stat label="Overtime" value={`${sum.overtime_hours} h`} tone="green" />
+        </div>
+      )}
       <Card title="Attendance history">
-        <Table rows={rows} columns={[{ key: "date", label: "Date" }, { label: "Check-in", render: (r) => fmtTime(r.check_in) }, { label: "Check-out", render: (r) => fmtTime(r.check_out) }, { key: "working_hours", label: "Hours" }, { label: "Status", render: (r) => <Badge v={r.status} /> }, { label: "", render: (r) => r.is_overridden && <span className="text-xs text-slate-400" title={r.override_note}>corrected by HR</span> }]} />
+        <Table rows={rows} columns={[{ key: "date", label: "Date" }, { label: "Check-in", render: (r) => fmtTime(r.check_in) }, { label: "Check-out", render: (r) => fmtTime(r.check_out) }, { key: "working_hours", label: "Hours" }, ...shiftCols, { label: "Status", render: (r) => <Badge v={r.status} /> }, { label: "", render: (r) => r.is_overridden && <span className="text-xs text-slate-400" title={r.override_note}>corrected by HR</span> }]} />
         <Pager page={page} setPage={setPage} count={count} />
       </Card>
     </div>
@@ -36,11 +51,13 @@ function MyAttendance() {
 function OverrideModal({ depts, onClose, onSaved, preset }) {
   const toast = useToast();
   const { data: emps } = useFetch("/employees/", { is_active: true, page_size: 200 });
-  const [f, setF] = useState({ employee: preset?.employee ?? "", date: preset?.date ?? "", status: "PRESENT", check_in: "", check_out: "", note: "" });
+  const { data: shifts } = useFetch("/shifts/");
+  const [f, setF] = useState({ employee: preset?.employee ?? "", date: preset?.date ?? "", shift: "", status: "PRESENT", check_in: "", check_out: "", note: "" });
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   const save = async (e) => {
     e.preventDefault();
     const body = { employee: +f.employee, date: f.date, status: f.status, note: f.note };
+    if (f.shift) body.shift = +f.shift;
     if (f.check_in && f.check_out) { body.check_in = new Date(`${f.date}T${f.check_in}`).toISOString(); body.check_out = new Date(`${f.date}T${f.check_out}`).toISOString(); }
     try { await api.post("/attendance/override/", body); toast("Attendance corrected"); onSaved(); onClose(); } catch (er) { toast(errMsg(er), "err"); }
   };
@@ -49,6 +66,7 @@ function OverrideModal({ depts, onClose, onSaved, preset }) {
       <form onSubmit={save} className="space-y-4">
         <Field label="Employee"><Select required value={f.employee} onChange={set("employee")}><option value="">Select...</option>{(emps?.results || []).map((x) => <option key={x.id} value={x.id}>{x.employee_code} - {x.first_name} {x.last_name}</option>)}</Select></Field>
         <Field label="Date"><Input type="date" required value={f.date} onChange={set("date")} /></Field>
+        <Field label="Shift (optional)" hint="Leave empty to use the employee's shift for that date"><Select value={f.shift} onChange={set("shift")}><option value="">Employee's shift</option>{(shifts || []).filter((x) => x.is_active).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</Select></Field>
         <Field label="Status"><Select value={f.status} onChange={set("status")}><option value="PRESENT">Present</option><option value="HALF_DAY">Half day</option><option value="ABSENT">Absent</option></Select></Field>
         <div className="grid grid-cols-2 gap-3"><Field label="Check-in (optional)"><Input type="time" value={f.check_in} onChange={set("check_in")} /></Field><Field label="Check-out (optional)"><Input type="time" value={f.check_out} onChange={set("check_out")} /></Field></div>
         <Field label="Reason for correction" hint="Required - recorded in the audit log"><Textarea required value={f.note} onChange={set("note")} /></Field>
@@ -72,7 +90,7 @@ function AllAttendance() {
         <Field label="Status"><Select value={q.status} onChange={(e) => setQ({ ...q, status: e.target.value })}><option value="">All</option><option value="PRESENT">Present</option><option value="HALF_DAY">Half day</option><option value="ABSENT">Absent</option></Select></Field>
       </div>
       <Table rows={rows} columns={[{ key: "date", label: "Date" }, { key: "employee_code", label: "Code" }, { key: "employee_name", label: "Employee" }, { key: "department", label: "Department" },
-        { label: "In", render: (r) => fmtTime(r.check_in) }, { label: "Out", render: (r) => fmtTime(r.check_out) }, { key: "working_hours", label: "Hours" }, { label: "Status", render: (r) => <Badge v={r.status} /> },
+        { label: "In", render: (r) => fmtTime(r.check_in) }, { label: "Out", render: (r) => fmtTime(r.check_out) }, { key: "working_hours", label: "Hours" }, ...shiftCols, { label: "Status", render: (r) => <Badge v={r.status} /> },
         { label: "", render: (r) => r.is_overridden && <span className="text-xs text-amber-600" title={r.override_note}>overridden</span> }]} />
       <Pager page={page} setPage={setPage} count={count} />
       {ov && <OverrideModal onClose={() => setOv(false)} onSaved={reload} />}
@@ -89,8 +107,8 @@ function MonthlySummary() {
         <Select className="w-40" value={m.month} onChange={(e) => setM({ ...m, month: +e.target.value })}>{MONTHS.map((n, i) => <option key={n} value={i + 1}>{n}</option>)}</Select>
         <Input className="w-28" type="number" value={m.year} onChange={(e) => setM({ ...m, year: +e.target.value })} />
       </div>
-      <Table rows={data || []} columns={[{ key: "employee_code", label: "Code" }, { key: "employee_name", label: "Employee" }, { key: "working_days", label: "Working days" }, { key: "present_days", label: "Present" }, { key: "half_days", label: "Half" },
-        { key: "paid_leave_days", label: "Paid leave" }, { key: "absent_days", label: "Absent / LOP" }, { key: "total_hours", label: "Hours" }]} />
+      <Table rows={data || []} columns={[{ key: "employee_code", label: "Code" }, { key: "employee_name", label: "Employee" }, { key: "working_days", label: "Working days" }, { key: "holidays", label: "Holidays" }, { key: "present_days", label: "Present" }, { key: "half_days", label: "Half" },
+        { key: "paid_leave_days", label: "Paid leave" }, { key: "absent_days", label: "Absent / LOP" }, { key: "late_days", label: "Late days" }, { key: "overtime_hours", label: "Overtime h" }, { key: "total_hours", label: "Hours" }]} />
     </Card>
   );
 }

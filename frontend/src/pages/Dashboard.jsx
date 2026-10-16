@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import api, { errMsg } from "../api";
 import { useAuth } from "../auth";
-import { Badge, Btn, Card, PageHeader, Spinner, Stat, Table, fmtMoney, fmtTime, useFetch, useToast } from "../components/ui";
-import { DonutChart, MiniCalendar } from "../components/widgets";
+import { Badge, Btn, Card, PageHeader, Spinner, Stat, Table, fmtHM, fmtMoney, fmtTime, useFetch, useToast } from "../components/ui";
+import { DonutChart, HolidayCalendar } from "../components/widgets";
 
 // Check-in / check-out box (also used on the Attendance page)
 export function CheckInCard({ onChange }) {
   const toast = useToast();
   const { data, reload } = useFetch("/attendance/today/");
+  const { data: shiftInfo } = useFetch("/shifts/my-shift/");
   const [busy, setBusy] = useState(false);
 
   const act = async (path) => {
@@ -33,7 +34,17 @@ export function CheckInCard({ onChange }) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="text-sm text-slate-600">
           <div>Check-in: <b>{fmtTime(checkedIn)}</b> &nbsp; Check-out: <b>{fmtTime(checkedOut)}</b></div>
-          {checkedOut && <div className="mt-1">Hours worked: <b>{data.working_hours}</b> ({data.status.replace("_", " ")})</div>}
+          {data?.check_in && data.shift_name ? (
+            // the record keeps the shift it was judged against, even if the assignment changed later
+            <div className="mt-1 text-xs text-slate-500">
+              Shift: <b>{data.shift_name}</b>
+              {shiftInfo && shiftInfo.shift.name !== data.shift_name && <> (your shift is now <b>{shiftInfo.shift.name}</b>, applies from the next check-in)</>}
+            </div>
+          ) : shiftInfo && (
+            <div className="mt-1 text-xs text-slate-500">Shift: <b>{shiftInfo.shift.name}</b> {fmtHM(shiftInfo.shift.start_time)} - {fmtHM(shiftInfo.shift.end_time)}{shiftInfo.shift.is_overnight ? " (+1 day)" : ""}, grace {shiftInfo.shift.grace_minutes} min</div>
+          )}
+          {data?.late_minutes > 0 && <div className="mt-1 text-xs text-amber-600">You checked in {data.late_minutes} minutes late.</div>}
+          {checkedOut && <div className="mt-1">Hours worked: <b>{data.working_hours}</b> ({data.status.replace("_", " ")}){Number(data.overtime_hours) > 0 && <> - overtime <b>{data.overtime_hours} h</b></>}</div>}
         </div>
         <div className="flex gap-2">
           <Btn variant="success" disabled={busy || !!checkedIn} onClick={() => act("check-in")}>Check in</Btn>
@@ -84,8 +95,8 @@ function AdminDashboard() {
           )}
         </Card>
 
-        <Card title="Calendar">
-          <MiniCalendar />
+        <Card title="Holiday calendar">
+          <HolidayCalendar />
         </Card>
       </div>
 
@@ -119,7 +130,7 @@ function EmployeeDashboard() {
       <CheckInCard onChange={reload} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat label="Working days (this month)" value={month.working_days} />
+        <Stat label="Working days (this month)" value={month.working_days} sub={`${month.holidays} holiday(s) excluded`} />
         <Stat label="Present days" value={month.present_days} tone="green" sub={`${month.half_days} half day(s)`} />
         <Stat label="Pending leave requests" value={data.pending_leaves} tone="amber" />
         <Stat label="Last net salary" value={data.last_payroll ? fmtMoney(data.last_payroll.net) : "-"} sub={data.last_payroll?.period} tone="slate" />
@@ -137,8 +148,8 @@ function EmployeeDashboard() {
             ]}
           />
         </Card>
-        <Card title="Calendar">
-          <MiniCalendar />
+        <Card title="Holiday calendar">
+          <HolidayCalendar />
         </Card>
       </div>
     </div>

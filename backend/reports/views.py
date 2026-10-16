@@ -59,6 +59,25 @@ class AttendanceReport(BaseReport):
         return cols, rows
 
 
+class ShiftAttendanceReport(BaseReport):
+    """Attendance by shift: who worked which shift, who was late / left early, overtime. Supports json, csv and pdf."""
+    title, slug = "Shift-wise Attendance Report", "shift-attendance"
+
+    def build(self, request):
+        qs = Attendance.objects.select_related("employee__user", "employee__department", "shift").order_by("date", "shift__name", "employee__employee_code")
+        f, t = _date(request, "date_from"), _date(request, "date_to")
+        if f: qs = qs.filter(date__gte=f)
+        if t: qs = qs.filter(date__lte=t)
+        if request.query_params.get("shift"): qs = qs.filter(shift_id=request.query_params["shift"])
+        if request.query_params.get("department"): qs = qs.filter(employee__department_id=request.query_params["department"])
+        cols = ["Date", "Shift", "Emp Code", "Name", "Department", "Check-in", "Check-out", "Hours", "Late (min)", "Early exit (min)", "Overtime (hrs)", "Status", "Overridden"]
+        rows = [[a.date, a.shift.name if a.shift else "-", a.employee.employee_code, a.employee.full_name, a.employee.department.name if a.employee.department else "-",
+                 timezone.localtime(a.check_in).strftime("%H:%M") if a.check_in else "-",
+                 timezone.localtime(a.check_out).strftime("%H:%M") if a.check_out else "-",
+                 a.working_hours, a.late_minutes, a.early_exit_minutes, a.overtime_hours, a.status, "Yes" if a.is_overridden else "No"] for a in qs[:2000]]
+        return cols, rows
+
+
 class LeaveReport(BaseReport):
     title, slug = "Leave Report", "leave"
 
@@ -84,15 +103,15 @@ class PayrollReport(BaseReport):
         if f: qs = qs.filter(year__gte=f.year).exclude(year=f.year, month__lt=f.month)
         if t: qs = qs.filter(year__lte=t.year).exclude(year=t.year, month__gt=t.month)
         if request.query_params.get("department"): qs = qs.filter(employee__department_id=request.query_params["department"])
-        cols = ["Period", "Emp Code", "Name", "Department", "Gross", "LOP Days", "LOP Ded.", "PF", "Tax", "Adjust.", "Net", "Status"]
+        cols = ["Period", "Emp Code", "Name", "Department", "Gross", "LOP Days", "LOP Ded.", "PF", "Tax", "Variable", "Overtime", "Adjust.", "Net", "Status"]
         rows, tot = [], Decimal("0")
         for p in qs:
             rows.append([f"{calendar.month_abbr[p.month]} {p.year}", p.employee.employee_code, p.employee.full_name,
                          p.employee.department.name if p.employee.department else "-", p.gross_salary, p.lop_days, p.lop_deduction,
-                         p.pf_deduction, p.tax_deduction, p.adjustment, p.net_salary, p.status])
+                         p.pf_deduction, p.tax_deduction, p.variable_pay, p.overtime_pay, p.adjustment, p.net_salary, p.status])
             tot += p.net_salary
         if rows:
-            rows.append(["TOTAL", "", "", "", "", "", "", "", "", "", tot, ""])
+            rows.append(["TOTAL", "", "", "", "", "", "", "", "", "", "", "", tot, ""])
         return cols, rows
 
 

@@ -2,17 +2,20 @@ import { useState } from "react";
 import api, { download, errMsg } from "../api";
 import { useAuth } from "../auth";
 import { Badge, Btn, Card, Field, Input, MONTHS, Modal, PageHeader, Pager, Select, Table, Tabs, fmtMoney, lastMonth, usePaged, useToast } from "../components/ui";
+import { Breakdown, MySalary, SalaryComponents, SalaryStructures, VariablePay } from "./PayrollSetup";
 
 const periodCol = { label: "Period", render: (r) => `${MONTHS[r.month - 1].slice(0, 3)} ${r.year}` };
 const slipBtn = (r) => <Btn small variant="secondary" onClick={() => download(`/payroll/${r.id}/slip/`, `salary_slip_${r.employee_code}_${r.year}-${String(r.month).padStart(2, "0")}.pdf`)}>Slip PDF</Btn>;
 
 function MySlips() {
   const { rows, count, page, setPage } = usePaged("/payroll/", { ordering: "-year" });
+  const [view, setView] = useState(null);
   return (
     <Card title="My payroll history & salary slips">
+      {view && <Breakdown row={view} onClose={() => setView(null)} />}
       <Table rows={rows} empty="No salary slips yet." columns={[periodCol, { label: "Gross", className: "text-right", render: (r) => fmtMoney(r.gross_salary) }, { label: "LOP days", key: "lop_days" },
-        { label: "Deductions", className: "text-right", render: (r) => fmtMoney(+r.lop_deduction + +r.pf_deduction + +r.tax_deduction) }, { label: "Net salary", className: "text-right font-semibold", render: (r) => fmtMoney(r.net_salary) },
-        { label: "Status", render: (r) => <Badge v={r.status} /> }, { label: "", render: (r) => r.has_slip && slipBtn(r) }]} />
+        { label: "Deductions", className: "text-right", render: (r) => fmtMoney(+r.lop_deduction + +r.pf_deduction + +r.tax_deduction + +r.other_deductions) }, { label: "Net salary", className: "text-right font-semibold", render: (r) => fmtMoney(r.net_salary) },
+        { label: "Status", render: (r) => <Badge v={r.status} /> }, { label: "", render: (r) => <div className="flex gap-1.5"><Btn small variant="secondary" onClick={() => setView(r)}>Breakdown</Btn>{r.has_slip && slipBtn(r)}</div> }]} />
       <Pager page={page} setPage={setPage} count={count} />
     </Card>
   );
@@ -25,6 +28,7 @@ function Manage() {
   const [gen, setGen] = useState(lm);
   const [q, setQ] = useState({ year: lm.year, month: lm.month, status: "" });
   const { rows, count, page, setPage, reload } = usePaged("/payroll/", q);
+  const [view, setView] = useState(null);
   const [adj, setAdj] = useState(null);
   const [adjForm, setAdjForm] = useState({ amount: "", note: "" });
 
@@ -42,7 +46,7 @@ function Manage() {
           <Btn onClick={generate}>Generate payroll</Btn>
           <Btn variant="success" onClick={creditAll}>Credit all (simulated)</Btn>
         </div>
-        <p className="mt-3 text-xs text-slate-400">Salary = gross - (gross / working days x LOP days) - PF - tax. Payroll locks automatically after generation; only Admin can unlock to adjust.</p>
+        <p className="mt-3 text-xs text-slate-400">Salary = gross (from the salary structure) + variable pay + overtime - LOP - deductions. Working days exclude weekends and holidays. Payroll locks automatically after generation; only Admin can unlock to adjust.</p>
       </Card>
       <Card title="Payroll records">
         <div className="mb-4 flex flex-wrap gap-3">
@@ -55,6 +59,7 @@ function Manage() {
           { label: "Net", className: "text-right font-semibold", render: (r) => fmtMoney(r.net_salary) }, { label: "Status", render: (r) => <div className="flex items-center gap-1"><Badge v={r.status} />{r.locked && <span title="Locked">&#128274;</span>}</div> },
           { label: "", render: (r) => (
             <div className="flex flex-wrap gap-1.5">
+              <Btn small variant="secondary" onClick={() => setView(r)}>Breakdown</Btn>
               {r.has_slip && slipBtn(r)}
               {r.status === "GENERATED" && r.locked && <Btn small variant="success" onClick={() => run(() => api.post(`/payroll/${r.id}/credit/`), "Salary credited (simulated)")}>Credit</Btn>}
               {isAdmin && r.status === "GENERATED" && r.locked && <Btn small variant="secondary" onClick={() => unlock(r)}>Unlock</Btn>}
@@ -62,6 +67,7 @@ function Manage() {
             </div>) }]} />
         <Pager page={page} setPage={setPage} count={count} />
       </Card>
+      {view && <Breakdown row={view} onClose={() => setView(null)} />}
       {adj && (
         <Modal title={`Manual adjustment - ${adj.employee_name}`} onClose={() => setAdj(null)}>
           <div className="space-y-4">
@@ -78,13 +84,17 @@ function Manage() {
 
 export default function Payroll() {
   const { isStaff, user } = useAuth();
-  const tabs = [...(isStaff ? [{ key: "manage", label: "Payroll management" }] : []), ...(user.has_employee ? [{ key: "mine", label: "My salary slips" }] : [])];
+  const tabs = [
+    ...(isStaff ? [{ key: "manage", label: "Payroll management" }, { key: "structure", label: "Salary structures" }, { key: "variable", label: "Variable pay" }, { key: "components", label: "Components" }] : []),
+    ...(user.has_employee ? [{ key: "mine", label: "My salary slips" }, { key: "mysalary", label: "My salary structure" }] : []),
+  ];
   const [tab, setTab] = useState(tabs[0]?.key);
   return (
     <>
       <PageHeader title={isStaff ? "Payroll" : "Salary Slips"} sub="Monthly salary processing and PDF salary slips" />
       {tabs.length > 1 && <Tabs tabs={tabs} value={tab} onChange={setTab} />}
       {tab === "manage" && <Manage />}{tab === "mine" && <MySlips />}
+      {tab === "structure" && <SalaryStructures />}{tab === "variable" && <VariablePay />}{tab === "components" && <SalaryComponents />}{tab === "mysalary" && <MySalary />}
     </>
   );
 }

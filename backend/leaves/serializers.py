@@ -42,8 +42,8 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Leave cannot start before your joining date.")
         if s.year != e.year:
             raise serializers.ValidationError("Split leave across calendar years into separate requests.")
-        if not working_days_between(s, e):
-            raise serializers.ValidationError("Selected range has no working days.")
+        if not working_days_between(s, e, emp.region):
+            raise serializers.ValidationError("Selected range has no working days (weekends and holidays are excluded).")
         if LeaveRequest.objects.filter(employee=emp, status__in=["PENDING", "APPROVED"], start_date__lte=e, end_date__gte=s).exists():
             raise serializers.ValidationError("You already have a leave request overlapping these dates.")
         return a

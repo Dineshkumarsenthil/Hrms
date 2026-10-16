@@ -21,7 +21,10 @@ class IsEmployee(BasePermission):
 
 
 ROLE_MATRIX = {
-    "ADMIN": ["Everything", "Manage roles & users", "Unlock/adjust payroll", "View audit logs"],
-    "HR": ["Manage employees", "Attendance override", "Approve/reject leave", "Generate payroll", "Reports", "View audit logs"],
-    "EMPLOYEE": ["View own profile", "Check-in/out", "Apply for leave", "View own attendance & salary slips"],
+    "ADMIN": ["Everything", "Manage roles & users", "Unlock/adjust payroll", "Configure salary components & revise salaries",
+              "Send broadcast notifications", "View audit logs"],
+    "HR": ["Manage employees", "Attendance override", "Approve/reject leave", "Generate payroll", "Enter bonus / variable pay",
+           "Manage holidays & shifts, assign shifts", "Reports (incl. shift-wise attendance)", "View audit logs"],
+    "EMPLOYEE": ["View own profile", "Check-in/out", "Apply for leave", "View own attendance & salary slips",
+                 "View holidays calendar & own shift", "Own notifications & preferences", "View own salary structure & payslip breakdown"],
 }

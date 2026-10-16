@@ -29,7 +29,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = ["id", "employee_code", "username", "email", "first_name", "last_name", "role", "department",
-                  "department_name", "designation", "phone", "joining_date", "basic_salary", "hra", "allowances",
+                  "department_name", "designation", "phone", "joining_date", "region", "basic_salary", "hra", "allowances",
                   "pf_percent", "tax_deduction", "gross_salary", "is_active"]
         read_only_fields = ["is_active"]
         extra_kwargs = {"employee_code": {"required": False}}  # auto-generated when blank
@@ -85,6 +85,10 @@ class EmployeeSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def update(self, instance, validated):
         u = validated.pop("user", {})
+        if instance.structures.exists():
+            # pay is managed through salary structures (Payroll page); ignore the flat fields here
+            for f in ("basic_salary", "hra", "allowances", "pf_percent", "tax_deduction"):
+                validated.pop(f, None)
         if "role" in u and not self.context["request"].user.is_admin_role:
             u.pop("role")  # only Admin may change roles
         for k, v in u.items():

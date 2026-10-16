@@ -10,6 +10,9 @@ import Attendance from "./pages/Attendance";
 import Leaves from "./pages/Leaves";
 import Payroll from "./pages/Payroll";
 import Reports from "./pages/Reports";
+import Holidays from "./pages/Holidays";
+import Shifts from "./pages/Shifts";
+import Notifications from "./pages/Notifications";
 import { AuditLogs, EmailLogs, Users } from "./pages/Admin";
 
 function Guard({ children, staff, admin }) {
@@ -30,6 +33,9 @@ export default function App() {
         <Route path="/attendance" element={<Attendance />} />
         <Route path="/leaves" element={<Leaves />} />
         <Route path="/payroll" element={<Payroll />} />
+        <Route path="/holidays" element={<Holidays />} />
+        <Route path="/shifts" element={<Shifts />} />
+        <Route path="/notifications" element={<Notifications />} />
         <Route path="/employees" element={<Guard staff><Employees /></Guard>} />
         <Route path="/reports" element={<Guard staff><Reports /></Guard>} />
         <Route path="/audit" element={<Guard staff><AuditLogs /></Guard>} />

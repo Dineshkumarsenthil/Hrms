@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth";
 import Icon from "./Icons";
+import NotificationBell from "./NotificationBell";
 import ThemeToggle from "./ThemeToggle";
 
 const ROLE_LABEL = { ADMIN: "Admin", HR: "HR", EMPLOYEE: "Employee" };
@@ -32,7 +33,10 @@ export default function Layout() {
     ...(isStaff ? [["/employees", "Employees", "users"]] : []),
     ["/attendance", "Attendance", "clock"],
     ["/leaves", "Leave", "calendar"],
+    ["/holidays", "Holidays", "flag"],
+    ["/shifts", "Shifts", "swap"],
     ["/payroll", isStaff ? "Payroll" : "Salary Slips", "wallet"],
+    ["/notifications", "Notifications", "bell"],
     ...(isStaff ? [["/reports", "Reports", "chart"], ["/audit", "Audit Logs", "shield"], ["/emails", "Email Logs", "mail"]] : []),
     ...(isAdmin ? [["/users", "Users & Roles", "lock"]] : []),
   ];
@@ -82,11 +86,7 @@ export default function Layout() {
 
           <ThemeToggle />
 
-          {isStaff && (
-            <Link to="/emails" title="Email logs" className="text-slate-500 hover:text-brand">
-              <Icon name="bell" />
-            </Link>
-          )}
+          <NotificationBell />
           <button onClick={handleLogout} title="Log out" className="text-slate-500 hover:text-brand">
             <Icon name="logout" />
           </button>

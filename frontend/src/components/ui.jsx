@@ -98,6 +98,17 @@ const badgeColors = {
   ADMIN: "bg-purple-100 text-purple-700",
   HR: "bg-indigo-100 text-indigo-700",
   EMPLOYEE: "bg-slate-100 text-slate-700",
+  COMPANY: "bg-rose-100 text-rose-700",
+  REGIONAL: "bg-amber-100 text-amber-700",
+  OPTIONAL: "bg-sky-100 text-sky-700",
+  GENERAL: "bg-indigo-100 text-indigo-700",
+  NIGHT: "bg-purple-100 text-purple-700",
+  FLEXIBLE: "bg-emerald-100 text-emerald-700",
+  REMOTE: "bg-sky-100 text-sky-700",
+  EARNING: "bg-emerald-100 text-emerald-700",
+  DEDUCTION: "bg-rose-100 text-rose-700",
+  ACTIVE: "bg-emerald-100 text-emerald-700",
+  ENDED: "bg-slate-200 text-slate-600",
 };
 
 export const Badge = ({ v, children }) => (
@@ -265,3 +276,14 @@ export const fmtTime = (iso) => (iso ? new Date(iso).toLocaleTimeString([], { ho
 export const fmtDateTime = (iso) => (iso ? new Date(iso).toLocaleString() : "-");
 export const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 export const lastMonth = () => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); return { year: d.getFullYear(), month: d.getMonth() + 1 }; };
+
+// "5 min ago", "2 h ago", or the date for older items
+export const fmtAgo = (iso) => {
+  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  if (minutes < 60 * 24) return `${Math.floor(minutes / 60)} h ago`;
+  return new Date(iso).toLocaleDateString();
+};
+export const fmtHM = (t) => (t ? t.slice(0, 5) : "-"); // "09:00:00" -> "09:00"
+export const todayStr = () => new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD in local time

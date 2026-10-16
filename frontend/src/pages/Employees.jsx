@@ -3,7 +3,7 @@ import api, { download, errMsg } from "../api";
 import { useAuth } from "../auth";
 import { Badge, Btn, Card, Field, Input, Modal, PageHeader, Pager, Select, Table, fmtMoney, fmtDateTime, usePaged, useFetch, useToast } from "../components/ui";
 
-const blank = { first_name: "", last_name: "", email: "", role: "EMPLOYEE", department: "", designation: "", phone: "", joining_date: "", basic_salary: "", hra: "", allowances: "", pf_percent: "12", tax_deduction: "0" };
+const blank = { first_name: "", last_name: "", email: "", role: "EMPLOYEE", department: "", designation: "", phone: "", joining_date: "", region: "", basic_salary: "", hra: "", allowances: "", pf_percent: "12", tax_deduction: "0" };
 
 function EmployeeForm({ initial, depts, onClose, onSaved }) {
   const { isAdmin } = useAuth();
@@ -40,7 +40,9 @@ function EmployeeForm({ initial, depts, onClose, onSaved }) {
         <Field label="Department"><Select required value={f.department} onChange={set("department")}><option value="">Select...</option>{depts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</Select></Field>
         <Field label="Designation"><Input required value={f.designation} onChange={set("designation")} /></Field>
         <Field label="Joining date"><Input type="date" required value={f.joining_date} onChange={set("joining_date")} /></Field>
+        <Field label="Region" hint="For regional holidays, e.g. Tamil Nadu"><Input value={f.region} onChange={set("region")} /></Field>
         <Field label="Role"><Select value={f.role} onChange={set("role")} disabled={!isAdmin}><option value="EMPLOYEE">Employee</option><option value="HR">HR</option><option value="ADMIN">Admin</option></Select></Field>
+        {initial && <p className="col-span-2 text-xs text-slate-500">Once a salary structure exists, pay is changed under Payroll &rarr; Salary structures and the salary fields below are ignored.</p>}
         <Field label="Basic salary"><Input type="number" min="0" step="0.01" required value={f.basic_salary} onChange={set("basic_salary")} /></Field>
         <Field label="HRA"><Input type="number" min="0" step="0.01" required value={f.hra} onChange={set("hra")} /></Field>
         <Field label="Allowances"><Input type="number" min="0" step="0.01" required value={f.allowances} onChange={set("allowances")} /></Field>

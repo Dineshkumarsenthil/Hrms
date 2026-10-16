@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from accounts.permissions import IsAdminOrHR, IsEmployee
 from audit.utils import log_action
 from employees.models import Employee
+from notifications.inapp import notify, notify_staff
 from notifications.service import send_templated
 from .models import LeaveBalance, LeaveRequest, LeaveType
 from .serializers import LeaveBalanceSerializer, LeaveRequestSerializer, LeaveTypeSerializer, ReviewSerializer
@@ -79,7 +80,7 @@ class LeaveRequestViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixi
     def perform_create(self, s):
         emp = self.request.user.employee
         d = s.validated_data
-        days = Decimal(len(working_days_between(d["start_date"], d["end_date"])))
+        days = Decimal(len(working_days_between(d["start_date"], d["end_date"], emp.region)))
         lt = d["leave_type"]
         lop = days if not lt.is_paid else max(Decimal("0"), days - _available(emp, lt, d["start_date"].year))
         r = s.save(employee=emp, days=days, lop_days=lop)
@@ -87,6 +88,7 @@ class LeaveRequestViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixi
         send_templated("LEAVE_APPLIED", emp.user.email, _mail_ctx(r))
         for hr in User.objects.filter(role__in=["HR", "ADMIN"], is_active=True).exclude(pk=emp.user_id):
             send_templated("LEAVE_APPLIED_HR", hr.email, _mail_ctx(r))
+        notify_staff("LEAVE", "New leave request", f"{emp.full_name} applied for {lt.name} from {r.start_date} to {r.end_date}.", "/leaves", exclude_user=emp.user)
 
     def _review(self, request, pk, approve):
         s = ReviewSerializer(data=request.data); s.is_valid(raise_exception=True)
@@ -108,6 +110,8 @@ class LeaveRequestViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixi
             r.save()
         log_action(request, "LEAVE_APPROVE" if approve else "LEAVE_REJECT", "LeaveRequest", r.id, {"employee": r.employee.employee_code, "lop_days": str(r.lop_days)})
         send_templated("LEAVE_APPROVED" if approve else "LEAVE_REJECTED", r.employee.user.email, _mail_ctx(r))
+        word = "approved" if approve else "rejected"
+        notify(r.employee.user, "LEAVE", f"Leave request {word}", f"Your {r.leave_type.name} request ({r.start_date} to {r.end_date}) was {word}." + (f" Remarks: {r.remarks}" if r.remarks else ""), "/leaves")
         return Response(LeaveRequestSerializer(r).data)
 
     @action(detail=True, methods=["post"], permission_classes=[IsAdminOrHR])

@@ -13,5 +13,7 @@ urlpatterns = [
     path("api/notifications/", include("notifications.urls")),
     path("api/reports/", include("reports.urls")),
     path("api/audit/", include("audit.urls")),
+    path("api/holidays/", include("holidays.urls")),
+    path("api/shifts/", include("shifts.urls")),
 ]
 # NOTE: uploaded documents are NOT served publicly; they are streamed through authenticated endpoints.

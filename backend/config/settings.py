@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta
+from decimal import Decimal
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -29,6 +30,8 @@ INSTALLED_APPS = [
     "notifications",
     "reports",
     "audit",
+    "holidays",
+    "shifts",
 ]
 
 MIDDLEWARE = [
@@ -131,3 +134,7 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024
 WORKDAYS = [0, 1, 2, 3, 4]      # Mon-Fri
 HALF_DAY_HOURS = 4              # below this many hours = half day
 COMPANY_NAME = "Acme Corp"
+
+# Payroll rules
+OVERTIME_MULTIPLIER = Decimal("1.5")   # overtime hour = 1.5 x normal hourly pay
+STANDARD_DAY_HOURS = Decimal("8")      # used to turn basic pay into an hourly rate

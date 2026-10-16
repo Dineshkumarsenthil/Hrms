@@ -18,6 +18,11 @@ class Attendance(models.Model):
     is_overridden = models.BooleanField(default=False)
     override_note = models.CharField(max_length=255, blank=True)
     overridden_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    # shift details are stored per day so old records keep their numbers even if the shift changes later
+    shift = models.ForeignKey("shifts.Shift", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    late_minutes = models.PositiveIntegerField(default=0)
+    early_exit_minutes = models.PositiveIntegerField(default=0)
+    overtime_hours = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0"))
 
     class Meta:
         ordering = ["-date"]

@@ -12,8 +12,10 @@ from accounts.permissions import IsAdmin, IsAdminOrHR
 from audit.utils import log_action
 from employees.models import Employee
 from . import services
-from .models import Payroll
-from .serializers import AdjustSerializer, GenerateSerializer, PayrollSerializer, ReasonSerializer
+from notifications.inapp import notify
+from .models import MonthlyVariablePay, Payroll, PayrollLine, SalaryComponent, SalaryStructure, SalaryStructureItem
+from .serializers import (AdjustSerializer, GenerateSerializer, MonthlyVariablePaySerializer, PayrollSerializer, ReasonSerializer,
+                          SalaryComponentSerializer, SalaryStructureSerializer)
 
 
 class PayrollViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -22,7 +24,7 @@ class PayrollViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.
     filterset_fields = {"year": ["exact"], "month": ["exact"], "employee": ["exact"], "status": ["exact"], "employee__department": ["exact"]}
 
     def get_queryset(self):
-        qs = Payroll.objects.select_related("employee__user", "employee__department", "slip")
+        qs = Payroll.objects.select_related("employee__user", "employee__department", "slip").prefetch_related("lines")
         u = self.request.user
         return qs if u.is_hr_or_admin else qs.filter(employee__user=u)
 
@@ -106,3 +108,83 @@ class PayrollViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.
             return Response({"error": "No slip for this payroll."}, status=404)
         log_action(request, "SLIP_DOWNLOAD", "Payroll", p.id)
         return FileResponse(p.slip.file.open("rb"), as_attachment=True, filename=f"salary_slip_{p.employee.employee_code}_{p.year}-{p.month:02d}.pdf", content_type="application/pdf")
+
+
+class SalaryComponentViewSet(viewsets.ModelViewSet):
+    """Admin configures the components. HR can read them (needed for variable pay)."""
+    queryset = SalaryComponent.objects.all()
+    serializer_class = SalaryComponentSerializer
+    pagination_class = None
+    filterset_fields = ["kind", "is_active", "is_variable"]
+
+    def get_permissions(self):
+        return [IsAdminOrHR()] if self.request.method in ("GET", "HEAD", "OPTIONS") else [IsAdmin()]
+
+    def perform_create(self, s):
+        o = s.save(); log_action(self.request, "SALARY_COMPONENT_CREATE", "SalaryComponent", o.id, {"code": o.code, "kind": o.kind})
+
+    def perform_update(self, s):
+        o = s.save(); log_action(self.request, "SALARY_COMPONENT_UPDATE", "SalaryComponent", o.id, {"code": o.code})
+
+    def perform_destroy(self, o):
+        used = SalaryStructureItem.objects.filter(component=o).exists() or PayrollLine.objects.filter(code=o.code).exists() or MonthlyVariablePay.objects.filter(component=o).exists()
+        if o.is_system:
+            raise ValidationError("System components cannot be deleted.")
+        if used:
+            raise ValidationError("This component is already used in salary history. Deactivate it instead.")
+        log_action(self.request, "SALARY_COMPONENT_DELETE", "SalaryComponent", o.id, {"code": o.code}); o.delete()
+
+
+class SalaryStructureViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
+    """Salary versions. Employees see their own history; HR/Admin see everyone; only Admin can revise pay."""
+    serializer_class = SalaryStructureSerializer
+    filterset_fields = ["employee"]
+
+    def get_permissions(self):
+        return [IsAdmin()] if self.action == "create" else super().get_permissions()
+
+    def get_queryset(self):
+        qs = SalaryStructure.objects.select_related("employee__user", "created_by").prefetch_related("items__component")
+        u = self.request.user
+        return qs if u.is_hr_or_admin else qs.filter(employee__user=u)
+
+    def perform_create(self, s):
+        d = s.validated_data
+        items = [(i["component"], i["value"]) for i in d["_items"]]
+        st = services.create_structure(d["employee"], d["effective_from"], d.get("reason", ""), items, self.request.user)
+        s.instance = st
+        log_action(self.request, "SALARY_REVISE", "SalaryStructure", st.id, {"employee": st.employee.employee_code, "from": str(st.effective_from), "reason": st.reason})
+        notify(st.employee.user, "PAYROLL", "Salary structure revised", f"Your compensation was revised, effective {st.effective_from}.", "/payroll")
+
+    @action(detail=False, methods=["get"])
+    def current(self, request):
+        """The structure in force today (or the flat fields as a read-only fallback) for ?employee=<id>."""
+        u = request.user
+        emp = u.employee if (not u.is_hr_or_admin and hasattr(u, "employee")) else get_object_or_404(Employee, pk=request.query_params.get("employee"))
+        st = services.structure_in_force(emp, timezone.localdate())
+        if st:
+            return Response(SalaryStructureSerializer(st).data)
+        items = [{"component": c.id, "name": c.name, "code": c.code, "kind": c.kind, "calc_type": c.calc_type, "value": f"{v:.2f}"} for c, v in services.legacy_items(emp)]
+        return Response({"id": None, "employee": emp.id, "employee_code": emp.employee_code, "employee_name": emp.full_name, "effective_from": emp.joining_date,
+                         "reason": "Salary fields of the employee profile (no structure created yet)", "items": items})
+
+
+class MonthlyVariablePayViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    """Bonus / incentive entered per employee per month, before payroll is generated."""
+    queryset = MonthlyVariablePay.objects.select_related("employee__user", "component")
+    serializer_class = MonthlyVariablePaySerializer
+    permission_classes = [IsAdminOrHR]
+    filterset_fields = ["year", "month", "employee"]
+
+    def perform_create(self, s):
+        d = s.validated_data
+        obj, _ = MonthlyVariablePay.objects.update_or_create(
+            employee=d["employee"], year=d["year"], month=d["month"], component=d["component"],
+            defaults={"amount": d["amount"], "note": d.get("note", ""), "entered_by": self.request.user})
+        s.instance = obj
+        log_action(self.request, "VARIABLE_PAY_SET", "MonthlyVariablePay", obj.id, {"employee": obj.employee.employee_code, "period": f"{obj.year}-{obj.month:02d}", "amount": str(obj.amount)})
+
+    def perform_destroy(self, o):
+        if Payroll.objects.filter(employee=o.employee, year=o.year, month=o.month).exists():
+            raise ValidationError("Payroll for that month is already generated and locked.")
+        log_action(self.request, "VARIABLE_PAY_DELETE", "MonthlyVariablePay", o.id); o.delete()

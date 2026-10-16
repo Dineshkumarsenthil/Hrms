@@ -20,6 +20,7 @@ class Employee(models.Model):
     designation = models.CharField(max_length=100)
     phone = models.CharField(max_length=20, blank=True)
     joining_date = models.DateField()
+    region = models.CharField(max_length=50, blank=True, help_text="Work region, used for regional holidays")
     # salary structure (monthly)
     basic_salary = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0"))
     hra = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0"))
